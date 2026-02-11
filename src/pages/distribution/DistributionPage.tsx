@@ -14,7 +14,7 @@ import {
   createAuditLog,
 } from '../../store';
 import type { Order, OrderLine, Allocation, Supplier } from '../../types';
-import { convertToTons, formatDate, formatNumber } from '../../utils/helpers';
+import { convertToTons, formatDate, formatCurrency } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
 import Input from '../../components/ui/Input';
@@ -26,6 +26,7 @@ interface AllocationRow {
   quantity: string;
   unit: 'т' | 'кг';
   pricePerTon: string;
+  currency: 'USD' | 'UZS';
 }
 
 const DistributionPage: React.FC = () => {
@@ -71,6 +72,7 @@ const DistributionPage: React.FC = () => {
           quantity: a.quantity.toString(),
           unit: a.unit,
           pricePerTon: a.pricePerTon.toString(),
+          currency: a.currency || 'USD', // по умолчанию USD для обратной совместимости
         }));
       rows[line.id] = lineAllocations;
     });
@@ -82,7 +84,7 @@ const DistributionPage: React.FC = () => {
       ...prev,
       [orderLineId]: [
         ...(prev[orderLineId] || []),
-        { supplierId: '', quantity: '', unit: 'т', pricePerTon: '' }
+        { supplierId: '', quantity: '', unit: 'т', pricePerTon: '', currency: 'USD' }
       ]
     }));
   };
@@ -158,6 +160,7 @@ const DistributionPage: React.FC = () => {
       quantityInTons: qtyInTons,
       pricePerTon: price,
       totalSum,
+      currency: row.currency,
     });
 
     // Обновляем ID в строке
@@ -248,7 +251,12 @@ const DistributionPage: React.FC = () => {
         const rows = allocationRows[orderLine.id] || [];
         
         const lineAllocations = allocations.filter(a => a.orderLineId === orderLine.id);
-        const totalSum = lineAllocations.reduce((sum, a) => sum + a.totalSum, 0);
+        // Группируем суммы по валютам
+        const totalsByCurrency = lineAllocations.reduce((acc, a) => {
+          const currency = a.currency || 'USD';
+          acc[currency] = (acc[currency] || 0) + a.totalSum;
+          return acc;
+        }, {} as Record<string, number>);
 
         return (
           <div key={orderLine.id} className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -282,6 +290,9 @@ const DistributionPage: React.FC = () => {
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                       Цена/т
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      Валюта
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                       Сумма
@@ -340,8 +351,19 @@ const DistributionPage: React.FC = () => {
                             className="text-sm"
                           />
                         </td>
+                        <td className="px-4 py-2">
+                          <Select
+                            value={row.currency}
+                            onChange={(e) => updateAllocationRow(orderLine.id, index, 'currency', e.target.value)}
+                            options={[
+                              { value: 'USD', label: 'USD' },
+                              { value: 'UZS', label: 'UZS' },
+                            ]}
+                            className="text-sm"
+                          />
+                        </td>
                         <td className="px-4 py-2 whitespace-nowrap">
-                          {formatNumber(sum)} ₽
+                          {formatCurrency(sum, row.currency)}
                         </td>
                         <td className="px-4 py-2 text-right space-x-2">
                           <button
@@ -369,7 +391,11 @@ const DistributionPage: React.FC = () => {
                 + Добавить строку
               </Button>
               <div className="text-sm font-medium">
-                Итого по позиции: {formatNumber(totalSum)} ₽
+                {Object.entries(totalsByCurrency).map(([currency, sum]) => (
+                  <div key={currency}>
+                    Итого по позиции: {formatCurrency(sum, currency as 'USD' | 'UZS')}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -377,10 +403,25 @@ const DistributionPage: React.FC = () => {
       })}
 
       <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center">
-          <div className="text-lg font-semibold">
-            Итого по заказу: {formatNumber(allocations.reduce((sum, a) => sum + a.totalSum, 0))} ₽
-          </div>
+        <div className="text-lg font-semibold mb-2">
+          Итого по заказу:
+        </div>
+        <div className="flex flex-col space-y-1">
+          {(() => {
+            const totalsByCurrency = allocations.reduce((acc, a) => {
+              const currency = a.currency || 'USD';
+              acc[currency] = (acc[currency] || 0) + a.totalSum;
+              return acc;
+            }, {} as Record<string, number>);
+            
+            return Object.entries(totalsByCurrency).map(([currency, sum]) => (
+              <div key={currency} className="text-base">
+                {formatCurrency(sum, currency as 'USD' | 'UZS')}
+              </div>
+            ));
+          })()}
+        </div>
+        <div className="flex justify-end mt-4">
           <Button
             size="lg"
             onClick={handleProceedToFinance}

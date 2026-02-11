@@ -31,3 +31,13 @@ export const generateOrderNumber = (): string => {
 export const initOrderCounter = (maxNumber: number) => {
   orderCounter = maxNumber + 1;
 };
+
+// Форматирование валюты
+export const formatCurrency = (value: number, currency: 'USD' | 'UZS' = 'USD'): string => {
+  if (currency === 'USD') {
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  } else {
+    // UZS - форматируем с пробелами и без дробной части
+    return `${Math.round(value).toLocaleString('ru-RU').replace(/,/g, ' ')} UZS`;
+  }
+};

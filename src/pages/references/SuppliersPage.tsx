@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../../store';
+import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, getCurrentUser, createAuditLog } from '../../store';
 import type { Supplier } from '../../types';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -16,6 +16,7 @@ const SuppliersPage: React.FC = () => {
     notes: '',
   });
   const { showToast } = useToast();
+  const currentUser = getCurrentUser();
 
   useEffect(() => {
     loadSuppliers();
@@ -30,9 +31,27 @@ const SuppliersPage: React.FC = () => {
     if (editingSupplier) {
       updateSupplier(editingSupplier.id, formData);
       showToast('Поставщик обновлён', 'success');
+      if (currentUser) {
+        createAuditLog({
+          action: 'UPDATE_SUPPLIER',
+          entityType: 'Supplier',
+          entityId: editingSupplier.id,
+          userId: currentUser.id,
+          details: formData,
+        });
+      }
     } else {
-      createSupplier(formData);
+      const newSupplier = createSupplier(formData);
       showToast('Поставщик создан', 'success');
+      if (currentUser) {
+        createAuditLog({
+          action: 'CREATE_SUPPLIER',
+          entityType: 'Supplier',
+          entityId: newSupplier.id,
+          userId: currentUser.id,
+          details: formData,
+        });
+      }
     }
     resetForm();
     loadSuppliers();
@@ -50,8 +69,18 @@ const SuppliersPage: React.FC = () => {
 
   const handleDelete = (id: string) => {
     if (confirm('Удалить этого поставщика?')) {
+      const supplier = suppliers.find(s => s.id === id);
       deleteSupplier(id);
       showToast('Поставщик удалён', 'success');
+      if (currentUser && supplier) {
+        createAuditLog({
+          action: 'DELETE_SUPPLIER',
+          entityType: 'Supplier',
+          entityId: id,
+          userId: currentUser.id,
+          details: { name: supplier.name },
+        });
+      }
       loadSuppliers();
     }
   };

@@ -55,6 +55,7 @@ export interface Allocation {
   quantityInTons: number;
   pricePerTon: number;
   totalSum: number; // авто = quantityInTons × pricePerTon
+  currency?: 'USD' | 'UZS'; // опциональное для обратной совместимости
 }
 
 // Финансовая операция
@@ -67,6 +68,7 @@ export interface PaymentOperation {
   createdAt: string;
   createdBy: string; // userId
   comment?: string;
+  currency?: 'USD' | 'UZS'; // опциональное для обратной совместимости
 }
 
 // Лог действий
