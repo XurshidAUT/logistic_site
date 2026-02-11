@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getItems, createOrder, createOrderLine, getCurrentUser, createAuditLog } from '../../store';
 import type { Item } from '../../types';
-import { convertToTons, generateOrderNumber } from '../../utils/helpers';
+import { convertToTons, generateOrderNumber, formatQuantity, formatNumber } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
 import Input from '../../components/ui/Input';
@@ -12,7 +12,7 @@ interface CartItem {
   itemId: string;
   itemName: string;
   quantity: number;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'контейнер';
   quantityInTons: number;
 }
 
@@ -20,7 +20,7 @@ const CreateOrderPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState<'т' | 'кг'>('т');
+  const [unit, setUnit] = useState<'т' | 'кг' | 'контейнер'>('т');
   const [cart, setCart] = useState<CartItem[]>([]);
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -168,10 +168,11 @@ const CreateOrderPage: React.FC = () => {
           <Select
             label="Единица"
             value={unit}
-            onChange={(e) => setUnit(e.target.value as 'т' | 'кг')}
+            onChange={(e) => setUnit(e.target.value as 'т' | 'кг' | 'контейнер')}
             options={[
               { value: 'т', label: 'Тонны (т)' },
               { value: 'кг', label: 'Кг' },
+              { value: 'контейнер', label: 'Контейнер (26 т)' },
             ]}
           />
         </div>
@@ -179,9 +180,9 @@ const CreateOrderPage: React.FC = () => {
         <Button onClick={handleAddToCart} className="mt-6">
           <span className="flex items-center">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            Добавить в корзину
+            Добавить
           </span>
         </Button>
       </div>
@@ -221,9 +222,6 @@ const CreateOrderPage: React.FC = () => {
                       Количество
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">
-                      Ед.
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">
                       В тоннах
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase">
@@ -237,9 +235,10 @@ const CreateOrderPage: React.FC = () => {
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     }`}>
                       <td className="px-6 py-4 font-medium text-gray-900">{item.itemName}</td>
-                      <td className="px-6 py-4 text-gray-700">{item.quantity}</td>
-                      <td className="px-6 py-4 text-gray-700">{item.unit}</td>
-                      <td className="px-6 py-4 text-gray-700 font-semibold">{item.quantityInTons.toFixed(3)} т</td>
+                      <td className="px-6 py-4 text-gray-700">
+                        {formatQuantity(item.quantity, item.unit, item.quantityInTons)}
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 font-semibold">{formatNumber(item.quantityInTons)} т</td>
                       <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => handleEditCartItem(index)}

@@ -14,7 +14,7 @@ import {
   createAuditLog,
 } from '../../store';
 import type { Order, OrderLine, Allocation, Supplier } from '../../types';
-import { convertToTons, formatDate, formatCurrency } from '../../utils/helpers';
+import { convertToTons, formatDate, formatCurrency, formatQuantity, formatNumber } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
 import Input from '../../components/ui/Input';
@@ -24,7 +24,7 @@ interface AllocationRow {
   id?: string;
   supplierId: string;
   quantity: string;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'контейнер';
   pricePerTon: string;
   currency: 'USD' | 'UZS';
 }
@@ -266,11 +266,13 @@ const DistributionPage: React.FC = () => {
               </h3>
               <div className="text-sm">
                 <span className="text-gray-600">Заказано:</span>{' '}
-                <span className="font-medium">{orderLine.quantityInTons.toFixed(3)} т</span>
+                <span className="font-medium">
+                  {formatQuantity(orderLine.quantity, orderLine.unit, orderLine.quantityInTons)}
+                </span>
                 {' | '}
                 <span className="text-gray-600">Остаток:</span>{' '}
                 <span className={`font-medium ${remaining === 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {remaining.toFixed(3)} т
+                  {formatNumber(remaining)} т
                 </span>
               </div>
             </div>
@@ -284,9 +286,6 @@ const DistributionPage: React.FC = () => {
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                       Количество
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Ед.
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                       Цена/т
@@ -321,25 +320,31 @@ const DistributionPage: React.FC = () => {
                           />
                         </td>
                         <td className="px-4 py-2">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={row.quantity}
-                            onChange={(e) => updateAllocationRow(orderLine.id, index, 'quantity', e.target.value)}
-                            className="text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <Select
-                            value={row.unit}
-                            onChange={(e) => updateAllocationRow(orderLine.id, index, 'unit', e.target.value)}
-                            options={[
-                              { value: 'т', label: 'т' },
-                              { value: 'кг', label: 'кг' },
-                            ]}
-                            className="text-sm"
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={row.quantity}
+                              onChange={(e) => updateAllocationRow(orderLine.id, index, 'quantity', e.target.value)}
+                              className="text-sm"
+                            />
+                            <Select
+                              value={row.unit}
+                              onChange={(e) => updateAllocationRow(orderLine.id, index, 'unit', e.target.value)}
+                              options={[
+                                { value: 'т', label: 'т' },
+                                { value: 'кг', label: 'кг' },
+                                { value: 'контейнер', label: 'конт.' },
+                              ]}
+                              className="text-sm w-24"
+                            />
+                          </div>
+                          {row.quantity && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              = {formatNumber(qtyInTons)} т
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-2">
                           <Input

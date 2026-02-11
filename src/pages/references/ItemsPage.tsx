@@ -13,7 +13,7 @@ const ItemsPage: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    unit: 'т' as 'т' | 'кг',
+    unit: 'т' as 'т' | 'кг' | 'контейнер',
     category: '',
     description: '',
   });
@@ -153,10 +153,11 @@ const ItemsPage: React.FC = () => {
           <Select
             label="Единица измерения"
             value={formData.unit}
-            onChange={(e) => setFormData({ ...formData, unit: e.target.value as 'т' | 'кг' })}
+            onChange={(e) => setFormData({ ...formData, unit: e.target.value as 'т' | 'кг' | 'контейнер' })}
             options={[
               { value: 'т', label: 'Тонны (т)' },
               { value: 'кг', label: 'Килограммы (кг)' },
+              { value: 'контейнер', label: 'Контейнер (26 т)' },
             ]}
           />
           <Input
