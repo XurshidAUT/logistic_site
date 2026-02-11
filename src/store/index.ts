@@ -226,6 +226,9 @@ export const savePayments = (payments: PaymentOperation[]) => saveData(KEYS.PAYM
 export const getPaymentsByAllocationId = (allocationId: string): PaymentOperation[] => {
   return getPayments().filter(p => p.allocationId === allocationId);
 };
+export const getPaymentsBySupplierAndOrder = (supplierId: string, orderId: string): PaymentOperation[] => {
+  return getPayments().filter(p => p.supplierId === supplierId && p.orderId === orderId);
+};
 export const createPayment = (payment: Omit<PaymentOperation, 'id'>): PaymentOperation => {
   const newPayment: PaymentOperation = { ...payment, id: uuidv4() };
   const payments = getPayments();

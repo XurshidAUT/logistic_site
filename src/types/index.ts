@@ -11,7 +11,7 @@ export interface User {
 export interface Item {
   id: string;
   name: string;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'контейнер';
   category?: string;
   description?: string;
 }
@@ -39,7 +39,7 @@ export interface OrderLine {
   orderId: string;
   itemId: string;
   quantity: number;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'контейнер';
   quantityInTons: number; // авторасчёт
 }
 
@@ -51,7 +51,7 @@ export interface Allocation {
   supplierId: string;
   itemId: string;
   quantity: number;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'контейнер';
   quantityInTons: number;
   pricePerTon: number;
   totalSum: number; // авто = quantityInTons × pricePerTon
@@ -61,7 +61,9 @@ export interface Allocation {
 // Финансовая операция
 export interface PaymentOperation {
   id: string;
-  allocationId: string;
+  allocationId?: string; // опциональное для обратной совместимости
+  orderId?: string; // для новой логики оплаты по поставщику
+  supplierId?: string; // для новой логики оплаты по поставщику
   type: 'PREPAYMENT' | 'PAYOFF';
   amount: number;
   date: string;
