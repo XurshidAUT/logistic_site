@@ -14,7 +14,7 @@ import {
   createAuditLog,
 } from '../../store';
 import type { Order, OrderLine, Allocation, Supplier } from '../../types';
-import { convertToTons, formatDate, formatCurrency, formatQuantity, formatNumber } from '../../utils/helpers';
+import { convertToTons, formatDate, formatCurrency, formatQuantity, formatNumber, calculateContainers } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
 import Input from '../../components/ui/Input';
@@ -24,7 +24,7 @@ interface AllocationRow {
   id?: string;
   supplierId: string;
   quantity: string;
-  unit: 'т' | 'кг' | 'контейнер';
+  unit: 'т' | 'кг';
   pricePerTon: string;
   currency: 'USD' | 'UZS';
 }
@@ -267,12 +267,12 @@ const DistributionPage: React.FC = () => {
               <div className="text-sm">
                 <span className="text-gray-600">Заказано:</span>{' '}
                 <span className="font-medium">
-                  {formatQuantity(orderLine.quantity, orderLine.unit, orderLine.quantityInTons)}
+                  {formatQuantity(orderLine.quantity, orderLine.unit, orderLine.quantityInTons, order.containerTonnage || 26)}
                 </span>
                 {' | '}
                 <span className="text-gray-600">Остаток:</span>{' '}
                 <span className={`font-medium ${remaining === 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatNumber(remaining)} т
+                  {formatNumber(remaining)} т ({formatNumber(calculateContainers(remaining, order.containerTonnage || 26))} конт.)
                 </span>
               </div>
             </div>
@@ -335,14 +335,13 @@ const DistributionPage: React.FC = () => {
                               options={[
                                 { value: 'т', label: 'т' },
                                 { value: 'кг', label: 'кг' },
-                                { value: 'контейнер', label: 'конт.' },
                               ]}
                               className="text-sm w-24"
                             />
                           </div>
                           {row.quantity && (
                             <div className="text-xs text-gray-500 mt-1">
-                              = {formatNumber(qtyInTons)} т
+                              = {formatNumber(qtyInTons)} т ({formatNumber(calculateContainers(qtyInTons, order.containerTonnage || 26))} конт.)
                             </div>
                           )}
                         </td>

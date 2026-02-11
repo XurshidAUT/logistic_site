@@ -261,7 +261,7 @@ const FinancePage: React.FC = () => {
                             <tr key={allocation.id}>
                               <td className="px-4 py-2">{item?.name || 'Неизвестно'}</td>
                               <td className="px-4 py-2">
-                                {formatQuantity(allocation.quantity, allocation.unit, allocation.quantityInTons)}
+                                {formatQuantity(allocation.quantity, allocation.unit, allocation.quantityInTons, order?.containerTonnage || 26)}
                               </td>
                               <td className="px-4 py-2">{formatCurrency(allocation.pricePerTon, currency as 'USD' | 'UZS')}</td>
                               <td className="px-4 py-2">{formatCurrency(allocation.totalSum, currency as 'USD' | 'UZS')}</td>
