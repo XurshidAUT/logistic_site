@@ -11,7 +11,7 @@ export interface User {
 export interface Item {
   id: string;
   name: string;
-  unit: 'т' | 'кг' | 'контейнер';
+  unit: 'т' | 'кг';
   category?: string;
   description?: string;
 }
@@ -30,7 +30,8 @@ export interface Order {
   orderNumber: string;
   createdAt: string;
   createdBy: string; // userId
-  status: 'draft' | 'distributed' | 'financial' | 'completed';
+  status: 'draft' | 'locked' | 'distributed' | 'financial' | 'completed';
+  containerTonnage?: number; // 26 или 27 тонн на контейнер (по умолчанию 26)
 }
 
 // Позиция заказа (строка корзины)
@@ -39,7 +40,7 @@ export interface OrderLine {
   orderId: string;
   itemId: string;
   quantity: number;
-  unit: 'т' | 'кг' | 'контейнер';
+  unit: 'т' | 'кг';
   quantityInTons: number; // авторасчёт
 }
 
@@ -51,7 +52,7 @@ export interface Allocation {
   supplierId: string;
   itemId: string;
   quantity: number;
-  unit: 'т' | 'кг' | 'контейнер';
+  unit: 'т' | 'кг';
   quantityInTons: number;
   pricePerTon: number;
   totalSum: number; // авто = quantityInTons × pricePerTon

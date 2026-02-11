@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getItems, createOrder, createOrderLine, getCurrentUser, createAuditLog } from '../../store';
 import type { Item } from '../../types';
-import { convertToTons, generateOrderNumber, formatQuantity, formatNumber } from '../../utils/helpers';
+import { convertToTons, generateOrderNumber, formatQuantity, formatNumber, calculateContainers } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
 import Input from '../../components/ui/Input';
@@ -12,7 +12,7 @@ interface CartItem {
   itemId: string;
   itemName: string;
   quantity: number;
-  unit: 'т' | 'кг' | 'контейнер';
+  unit: 'т' | 'кг';
   quantityInTons: number;
 }
 
@@ -20,8 +20,9 @@ const CreateOrderPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState<'т' | 'кг' | 'контейнер'>('т');
+  const [unit, setUnit] = useState<'т' | 'кг'>('т');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [containerTonnage, setContainerTonnage] = useState<number>(26);
   const navigate = useNavigate();
   const { showToast } = useToast();
   const currentUser = getCurrentUser();
@@ -102,7 +103,8 @@ const CreateOrderPage: React.FC = () => {
       orderNumber,
       createdAt: new Date().toISOString(),
       createdBy: currentUser.id,
-      status: 'draft',
+      status: 'locked', // Заказ закрывается после сохранения
+      containerTonnage,
     });
 
     // Создаём строки заказа
@@ -135,11 +137,38 @@ const CreateOrderPage: React.FC = () => {
 
       {/* Add Item Form */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div className="flex items-center mb-4">
-          <svg className="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          <h3 className="text-xl font-bold text-gray-800">Добавить позицию</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <svg className="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <h3 className="text-xl font-bold text-gray-800">Добавить позицию</h3>
+          </div>
+          
+          {/* Container tonnage toggle */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Контейнер:</span>
+            <button
+              onClick={() => setContainerTonnage(26)}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                containerTonnage === 26 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              26т/конт
+            </button>
+            <button
+              onClick={() => setContainerTonnage(27)}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                containerTonnage === 27 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              27т/конт
+            </button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -168,11 +197,10 @@ const CreateOrderPage: React.FC = () => {
           <Select
             label="Единица"
             value={unit}
-            onChange={(e) => setUnit(e.target.value as 'т' | 'кг' | 'контейнер')}
+            onChange={(e) => setUnit(e.target.value as 'т' | 'кг')}
             options={[
               { value: 'т', label: 'Тонны (т)' },
               { value: 'кг', label: 'Кг' },
-              { value: 'контейнер', label: 'Контейнер (26 т)' },
             ]}
           />
         </div>
@@ -236,7 +264,7 @@ const CreateOrderPage: React.FC = () => {
                     }`}>
                       <td className="px-6 py-4 font-medium text-gray-900">{item.itemName}</td>
                       <td className="px-6 py-4 text-gray-700">
-                        {formatQuantity(item.quantity, item.unit, item.quantityInTons)}
+                        {formatQuantity(item.quantity, item.unit, item.quantityInTons, containerTonnage)}
                       </td>
                       <td className="px-6 py-4 text-gray-700 font-semibold">{formatNumber(item.quantityInTons)} т</td>
                       <td className="px-6 py-4 text-right space-x-2">
@@ -268,6 +296,10 @@ const CreateOrderPage: React.FC = () => {
             <div className="mt-6 flex justify-between items-center">
               <div className="text-sm text-gray-600">
                 Всего позиций: <span className="font-bold text-gray-900">{cart.length}</span>
+                {' | '}
+                Всего контейнеров: <span className="font-bold text-blue-600">
+                  {formatNumber(cart.reduce((sum, item) => sum + calculateContainers(item.quantityInTons, containerTonnage), 0))} конт.
+                </span>
               </div>
               <Button onClick={handleSaveOrder} size="lg" className="shadow-lg">
                 <span className="flex items-center">

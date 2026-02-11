@@ -1,16 +1,13 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import DistributionPage from './DistributionPage';
+import DistributionListPage from './DistributionListPage';
 
 const DistributionModule: React.FC = () => {
   return (
     <Routes>
       <Route path="/:orderId" element={<DistributionPage />} />
-      <Route path="/" element={
-        <div className="text-center py-12">
-          <p className="text-gray-600">Выберите заказ для распределения</p>
-        </div>
-      } />
+      <Route path="/" element={<DistributionListPage />} />
     </Routes>
   );
 };
