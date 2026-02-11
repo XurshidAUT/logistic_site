@@ -224,7 +224,7 @@ const OrderDetailsPage: React.FC = () => {
           )}
         </div>
 
-        {!isEditable && order.status !== 'draft' && (
+        {!isEditable && (
           <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <p className="text-sm text-orange-800">
               <strong>Заказ закрыт для изменений.</strong> Невозможно редактировать или удалять позиции. 

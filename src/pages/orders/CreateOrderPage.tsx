@@ -103,7 +103,7 @@ const CreateOrderPage: React.FC = () => {
       orderNumber,
       createdAt: new Date().toISOString(),
       createdBy: currentUser.id,
-      status: 'locked',
+      status: 'locked', // Заказ закрывается после сохранения
       containerTonnage,
     });
 
