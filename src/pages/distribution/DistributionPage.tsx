@@ -252,7 +252,7 @@ const DistributionPage: React.FC = () => {
         
         const lineAllocations = allocations.filter(a => a.orderLineId === orderLine.id);
         // Группируем суммы по валютам
-        const totalsByСurrency = lineAllocations.reduce((acc, a) => {
+        const totalsByCurrency = lineAllocations.reduce((acc, a) => {
           const currency = a.currency || 'USD';
           acc[currency] = (acc[currency] || 0) + a.totalSum;
           return acc;
@@ -391,7 +391,7 @@ const DistributionPage: React.FC = () => {
                 + Добавить строку
               </Button>
               <div className="text-sm font-medium">
-                {Object.entries(totalsByСurrency).map(([currency, sum]) => (
+                {Object.entries(totalsByCurrency).map(([currency, sum]) => (
                   <div key={currency}>
                     Итого по позиции: {formatCurrency(sum, currency as 'USD' | 'UZS')}
                   </div>
