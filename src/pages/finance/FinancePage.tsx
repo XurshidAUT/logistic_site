@@ -143,10 +143,11 @@ const FinancePage: React.FC = () => {
 
     // Check if everything is paid
     const allAllocations = getAllocationsByOrderId(orderId);
+    const supplierTotals = getSupplierTotals();
     const allPaid = allAllocations.every(a => {
       const aPaid = calculatePaidForAllocation(a.id);
       return a.totalSum === aPaid;
-    }) && Object.entries(getSupplierTotals()).every(([supplierId, currencies]) => {
+    }) && Object.entries(supplierTotals).every(([supplierId, currencies]) => {
       return Object.entries(currencies).every(([currency, amounts]) => {
         const paid = calculatePaidForSupplier(supplierId, currency as 'USD' | 'UZS');
         return amounts.total === paid;
@@ -412,15 +413,22 @@ const FinancePage: React.FC = () => {
               return acc;
             }, {} as Record<string, { total: number; paid: number; remaining: number }>);
             
-            // Calculate paid per currency from all suppliers
-            Object.keys(totalsByCurrency).forEach(currency => {
-              const curr = currency as 'USD' | 'UZS';
-              let totalPaid = 0;
-              Object.keys(supplierTotals).forEach(supplierId => {
-                totalPaid += calculatePaidForSupplier(supplierId, curr);
+            // Pre-compute all payments by supplier and currency in a single pass
+            const paymentsByCurrency: Record<string, number> = {};
+            Object.entries(supplierTotals).forEach(([supplierId, currencies]) => {
+              Object.keys(currencies).forEach((currency) => {
+                const curr = currency as 'USD' | 'UZS';
+                if (!paymentsByCurrency[currency]) {
+                  paymentsByCurrency[currency] = 0;
+                }
+                paymentsByCurrency[currency] += calculatePaidForSupplier(supplierId, curr);
               });
-              totalsByCurrency[currency].paid = totalPaid;
-              totalsByCurrency[currency].remaining = totalsByCurrency[currency].total - totalPaid;
+            });
+            
+            // Apply pre-computed payments to totals
+            Object.keys(totalsByCurrency).forEach(currency => {
+              totalsByCurrency[currency].paid = paymentsByCurrency[currency] || 0;
+              totalsByCurrency[currency].remaining = totalsByCurrency[currency].total - totalsByCurrency[currency].paid;
             });
             
             return Object.entries(totalsByCurrency).map(([currency, amounts]) => (
