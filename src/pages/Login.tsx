@@ -36,7 +36,7 @@ const Login: React.FC = () => {
               </svg>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-              🚛 Логистика Pro
+              🚛 Logistics
             </h1>
             <p className="text-gray-600">Войдите в систему управления</p>
           </div>
@@ -98,7 +98,7 @@ const Login: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-6 text-white text-sm opacity-90">
-          <p>© 2024 Логистика Pro. Все права защищены.</p>
+          <p>© 2024 Logistics. Все права защищены.</p>
         </div>
       </div>
     </div>

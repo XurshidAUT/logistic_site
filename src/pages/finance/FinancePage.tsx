@@ -14,7 +14,7 @@ import {
   updateOrder,
 } from '../../store';
 import type { Order, Allocation, PaymentOperation } from '../../types';
-import { formatDate, formatDateTime, formatNumber } from '../../utils/helpers';
+import { formatDate, formatDateTime, formatCurrency } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
@@ -99,6 +99,7 @@ const FinancePage: React.FC = () => {
       createdAt: new Date().toISOString(),
       createdBy: currentUser.id,
       comment: paymentComment || undefined,
+      currency: selectedAllocation.currency || 'USD', // наследуем валюту от распределения
     });
 
     createAuditLog({
@@ -172,8 +173,14 @@ const FinancePage: React.FC = () => {
 
       {Object.entries(supplierGroups).map(([supplierId, supplierAllocations]) => {
         const supplier = getSupplierById(supplierId);
-        const supplierTotal = supplierAllocations.reduce((sum, a) => sum + a.totalSum, 0);
-        const supplierPaid = supplierAllocations.reduce((sum, a) => sum + calculatePaid(a.id), 0);
+        // Группируем суммы по валютам для этого поставщика
+        const totalsByCurrency = supplierAllocations.reduce((acc, a) => {
+          const currency = a.currency || 'USD';
+          acc[currency] = acc[currency] || { total: 0, paid: 0 };
+          acc[currency].total += a.totalSum;
+          acc[currency].paid += calculatePaid(a.id);
+          return acc;
+        }, {} as Record<string, { total: number; paid: number }>);
         
         return (
           <div key={supplierId} className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -216,6 +223,7 @@ const FinancePage: React.FC = () => {
                     const paid = calculatePaid(allocation.id);
                     const remaining = calculateRemaining(allocation);
                     const status = getPaymentStatus(allocation);
+                    const currency = allocation.currency || 'USD';
 
                     return (
                       <tr key={allocation.id}>
@@ -223,10 +231,10 @@ const FinancePage: React.FC = () => {
                         <td className="px-4 py-2">
                           {allocation.quantity} {allocation.unit} ({allocation.quantityInTons.toFixed(3)} т)
                         </td>
-                        <td className="px-4 py-2">{formatNumber(allocation.pricePerTon)} ₽</td>
-                        <td className="px-4 py-2">{formatNumber(allocation.totalSum)} ₽</td>
-                        <td className="px-4 py-2">{formatNumber(paid)} ₽</td>
-                        <td className="px-4 py-2">{formatNumber(remaining)} ₽</td>
+                        <td className="px-4 py-2">{formatCurrency(allocation.pricePerTon, currency)}</td>
+                        <td className="px-4 py-2">{formatCurrency(allocation.totalSum, currency)}</td>
+                        <td className="px-4 py-2">{formatCurrency(paid, currency)}</td>
+                        <td className="px-4 py-2">{formatCurrency(remaining, currency)}</td>
                         <td className="px-4 py-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             status === 'Оплачено' ? 'bg-green-100 text-green-800' :
@@ -262,9 +270,13 @@ const FinancePage: React.FC = () => {
             </div>
             <div className="flex justify-end text-sm font-medium">
               <div className="space-y-1">
-                <div>Итого по поставщику: {formatNumber(supplierTotal)} ₽</div>
-                <div>Оплачено: {formatNumber(supplierPaid)} ₽</div>
-                <div className="text-red-600">Остаток: {formatNumber(supplierTotal - supplierPaid)} ₽</div>
+                {Object.entries(totalsByCurrency).map(([currency, amounts]) => (
+                  <div key={currency}>
+                    <div>Итого по поставщику: {formatCurrency(amounts.total, currency as 'USD' | 'UZS')}</div>
+                    <div>Оплачено: {formatCurrency(amounts.paid, currency as 'USD' | 'UZS')}</div>
+                    <div className="text-red-600">Остаток: {formatCurrency(amounts.total - amounts.paid, currency as 'USD' | 'UZS')}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -302,6 +314,7 @@ const FinancePage: React.FC = () => {
                   .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                   .map(payment => {
                     const user = getUserById(payment.createdBy);
+                    const currency = payment.currency || 'USD';
                     return (
                       <tr key={payment.id}>
                         <td className="px-4 py-2 whitespace-nowrap">
@@ -316,7 +329,7 @@ const FinancePage: React.FC = () => {
                             {payment.type === 'PREPAYMENT' ? 'Предоплата' : 'Погашение'}
                           </span>
                         </td>
-                        <td className="px-4 py-2">{formatNumber(payment.amount)} ₽</td>
+                        <td className="px-4 py-2">{formatCurrency(payment.amount, currency)}</td>
                         <td className="px-4 py-2">{user?.fullName || 'Неизвестно'}</td>
                         <td className="px-4 py-2">{payment.comment || '-'}</td>
                       </tr>
@@ -329,19 +342,35 @@ const FinancePage: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center text-lg font-bold">
-          <span>Итого по заказу:</span>
-          <span>{formatNumber(allocations.reduce((sum, a) => sum + a.totalSum, 0))} ₽</span>
-        </div>
-        <div className="flex justify-between items-center text-sm text-gray-600 mt-2">
-          <span>Оплачено:</span>
-          <span>{formatNumber(allocations.reduce((sum, a) => sum + calculatePaid(a.id), 0))} ₽</span>
-        </div>
-        <div className="flex justify-between items-center text-sm text-red-600 mt-2">
-          <span>Остаток:</span>
-          <span>
-            {formatNumber(allocations.reduce((sum, a) => sum + calculateRemaining(a), 0))} ₽
-          </span>
+        <div className="text-lg font-bold mb-2">Итого по заказу:</div>
+        <div className="space-y-2">
+          {(() => {
+            const totalsByCurrency = allocations.reduce((acc, a) => {
+              const currency = a.currency || 'USD';
+              acc[currency] = acc[currency] || { total: 0, paid: 0, remaining: 0 };
+              acc[currency].total += a.totalSum;
+              acc[currency].paid += calculatePaid(a.id);
+              acc[currency].remaining += calculateRemaining(a);
+              return acc;
+            }, {} as Record<string, { total: number; paid: number; remaining: number }>);
+            
+            return Object.entries(totalsByCurrency).map(([currency, amounts]) => (
+              <div key={currency} className="border-b pb-2 last:border-b-0">
+                <div className="flex justify-between items-center text-base font-semibold">
+                  <span>Всего:</span>
+                  <span>{formatCurrency(amounts.total, currency as 'USD' | 'UZS')}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-gray-600 mt-1">
+                  <span>Оплачено:</span>
+                  <span>{formatCurrency(amounts.paid, currency as 'USD' | 'UZS')}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-red-600 mt-1">
+                  <span>Остаток:</span>
+                  <span>{formatCurrency(amounts.remaining, currency as 'USD' | 'UZS')}</span>
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       </div>
 
@@ -368,12 +397,15 @@ const FinancePage: React.FC = () => {
                 {getItemById(selectedAllocation.itemId)?.name}
               </div>
               <div className="text-gray-600">
-                Остаток к оплате: {formatNumber(calculateRemaining(selectedAllocation))} ₽
+                Остаток к оплате: {formatCurrency(calculateRemaining(selectedAllocation), selectedAllocation.currency || 'USD')}
+              </div>
+              <div className="text-gray-500 text-xs mt-1">
+                Валюта: {selectedAllocation.currency || 'USD'}
               </div>
             </div>
           )}
           <Input
-            label="Сумма"
+            label={`Сумма (${selectedAllocation?.currency || 'USD'})`}
             type="number"
             step="0.01"
             min="0"

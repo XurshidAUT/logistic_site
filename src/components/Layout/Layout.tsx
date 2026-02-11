@@ -88,7 +88,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </button>
             <h1 className="text-xl font-bold text-white flex items-center">
               <span className="text-2xl mr-2">🚛</span>
-              Логистика Pro
+              Logistics
             </h1>
           </div>
           <div className="flex items-center space-x-4">
@@ -151,7 +151,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-50 border-t border-gray-200">
             <div className="text-center text-xs text-gray-500">
               <p className="font-semibold">Версия 1.0 Beta</p>
-              <p className="mt-1">© 2024 Логистика Pro</p>
+              <p className="mt-1">© 2024 Logistics</p>
             </div>
           </div>
         </aside>

@@ -1,6 +1,10 @@
-# React + TypeScript + Vite
+# Logistics
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Система управления логистикой с интерфейсом на React + TypeScript + Vite.
+
+## Описание
+
+Logistics - это веб-приложение для управления заказами, распределением грузов и финансами в логистической компании.
 
 Currently, two official plugins are available:
 
