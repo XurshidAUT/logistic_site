@@ -60,7 +60,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       )
     },
     { 
-      path: '/admin', 
+      path: '/', 
       label: 'Админ', 
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +142,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
           <nav className="p-4 space-y-1">
             {menuItems.map((item) => {
-              const isActive = location.pathname.startsWith(item.path);
+              const isActive = item.path === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(item.path);
               return (
                 <Link
                   key={item.path}
