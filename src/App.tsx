@@ -10,6 +10,7 @@ import DistributionModule from './pages/distribution';
 import FinanceModule from './pages/finance';
 import ReferencesPage from './pages/references';
 import AuditPage from './pages/AuditPage';
+import AdminPage from './pages/AdminPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const currentUser = getCurrentUser();
@@ -39,6 +40,7 @@ function App() {
                     <Route path="/finance/*" element={<FinanceModule />} />
                     <Route path="/references/*" element={<ReferencesPage />} />
                     <Route path="/audit" element={<AuditPage />} />
+                    <Route path="/admin" element={<AdminPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Layout>

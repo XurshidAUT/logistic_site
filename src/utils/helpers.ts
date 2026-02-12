@@ -1,6 +1,7 @@
 // Конвертация единиц измерения
-export const convertToTons = (quantity: number, unit: 'т' | 'кг'): number => {
+export const convertToTons = (quantity: number, unit: 'т' | 'кг' | 'конт.', containerTonnage: number = 26): number => {
   if (unit === 'кг') return quantity / 1000;
+  if (unit === 'конт.') return quantity * containerTonnage;
   return quantity;
 };
 
@@ -16,7 +17,7 @@ export const formatNumber = (value: number): string => {
 };
 
 // Форматирование количества с единицами измерения и контейнерами
-export const formatQuantity = (quantity: number, unit: 'т' | 'кг', quantityInTons: number, containerTonnage: number = 26): string => {
+export const formatQuantity = (quantity: number, unit: 'т' | 'кг' | 'конт.', quantityInTons: number, containerTonnage: number = 26): string => {
   const formattedQty = formatNumber(quantity);
   const formattedTons = formatNumber(quantityInTons);
   const containers = calculateContainers(quantityInTons, containerTonnage);
@@ -24,6 +25,8 @@ export const formatQuantity = (quantity: number, unit: 'т' | 'кг', quantityIn
   
   if (unit === 'кг') {
     return `${formattedQty} кг (${formattedTons} т / ${formattedContainers} конт.)`;
+  } else if (unit === 'конт.') {
+    return `${formattedContainers} конт. (${formattedTons} т)`;
   } else {
     return `${formattedTons} т (${formattedContainers} конт.)`;
   }
