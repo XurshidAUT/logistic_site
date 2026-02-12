@@ -12,6 +12,7 @@ import {
   updateOrder,
   getCurrentUser,
   createAuditLog,
+  isAdminMode,
 } from '../../store';
 import type { Order, OrderLine, Allocation, Supplier } from '../../types';
 import { convertToTons, formatDate, formatCurrency, formatQuantity, formatNumber, calculateContainers } from '../../utils/helpers';
@@ -24,9 +25,10 @@ interface AllocationRow {
   id?: string;
   supplierId: string;
   quantity: string;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'конт.';
   pricePerTon: string;
   currency: 'USD' | 'UZS';
+  containerTonnage?: number;
 }
 
 const DistributionPage: React.FC = () => {
@@ -34,6 +36,7 @@ const DistributionPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const currentUser = getCurrentUser();
+  const adminMode = isAdminMode();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [orderLines, setOrderLines] = useState<OrderLine[]>([]);
@@ -73,6 +76,7 @@ const DistributionPage: React.FC = () => {
           unit: a.unit,
           pricePerTon: a.pricePerTon.toString(),
           currency: a.currency || 'USD', // по умолчанию USD для обратной совместимости
+          containerTonnage: a.containerTonnage,
         }));
       rows[line.id] = lineAllocations;
     });
@@ -80,11 +84,12 @@ const DistributionPage: React.FC = () => {
   }, [orderId]);
 
   const addAllocationRow = (orderLineId: string) => {
+    const orderLine = orderLines.find(l => l.id === orderLineId);
     setAllocationRows(prev => ({
       ...prev,
       [orderLineId]: [
         ...(prev[orderLineId] || []),
-        { supplierId: '', quantity: '', unit: 'т', pricePerTon: '', currency: 'USD' }
+        { supplierId: '', quantity: '', unit: 'т', pricePerTon: '', currency: 'USD', containerTonnage: orderLine?.containerTonnage || order?.containerTonnage || 26 }
       ]
     }));
   };
@@ -100,6 +105,11 @@ const DistributionPage: React.FC = () => {
   const removeAllocationRow = (orderLineId: string, index: number) => {
     const row = allocationRows[orderLineId]?.[index];
     if (row?.id) {
+      // Check admin mode for deleting saved allocations
+      if (!adminMode) {
+        showToast('Включите режим администратора для удаления', 'error');
+        return;
+      }
       // Удалить из БД
       deleteAllocation(row.id);
       setAllocations(getAllocationsByOrderId(orderId!));
@@ -120,6 +130,12 @@ const DistributionPage: React.FC = () => {
       return;
     }
 
+    // Check admin mode for updating saved allocations
+    if (row.id && !adminMode) {
+      showToast('Включите режим администратора для редактирования', 'error');
+      return;
+    }
+
     const qty = parseFloat(row.quantity);
     const price = parseFloat(row.pricePerTon);
     
@@ -131,7 +147,7 @@ const DistributionPage: React.FC = () => {
     const orderLine = orderLines.find(l => l.id === orderLineId);
     if (!orderLine) return;
 
-    const qtyInTons = convertToTons(qty, row.unit);
+    const qtyInTons = convertToTons(qty, row.unit, row.containerTonnage || orderLine.containerTonnage || order?.containerTonnage || 26);
     
     // Проверяем, не превышает ли распределение заказанное количество
     const existingAllocated = allocations
@@ -161,6 +177,7 @@ const DistributionPage: React.FC = () => {
       pricePerTon: price,
       totalSum,
       currency: row.currency,
+      containerTonnage: row.containerTonnage,
     });
 
     // Обновляем ID в строке
@@ -267,7 +284,7 @@ const DistributionPage: React.FC = () => {
               <div className="text-sm">
                 <span className="text-gray-600">Заказано:</span>{' '}
                 <span className="font-medium">
-                  {formatQuantity(orderLine.quantity, orderLine.unit, orderLine.quantityInTons, order.containerTonnage || 26)}
+                  {formatQuantity(orderLine.quantity, orderLine.unit, orderLine.quantityInTons, orderLine.containerTonnage || order.containerTonnage || 26)}
                 </span>
                 {' | '}
                 <span className="text-gray-600">Остаток:</span>{' '}
@@ -303,7 +320,7 @@ const DistributionPage: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {rows.map((row, index) => {
-                    const qtyInTons = row.quantity ? convertToTons(parseFloat(row.quantity), row.unit) : 0;
+                    const qtyInTons = row.quantity ? convertToTons(parseFloat(row.quantity), row.unit, row.containerTonnage || orderLine.containerTonnage || order.containerTonnage || 26) : 0;
                     const sum = qtyInTons * (parseFloat(row.pricePerTon) || 0);
                     
                     return (
@@ -335,6 +352,7 @@ const DistributionPage: React.FC = () => {
                               options={[
                                 { value: 'т', label: 'т' },
                                 { value: 'кг', label: 'кг' },
+                                { value: 'конт.', label: 'конт.' },
                               ]}
                               className="text-sm w-24"
                             />

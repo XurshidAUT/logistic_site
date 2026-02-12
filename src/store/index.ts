@@ -21,7 +21,8 @@ const KEYS = {
   ALLOCATIONS: 'logistics_allocations',
   PAYMENTS: 'logistics_payments',
   AUDIT_LOGS: 'logistics_audit_logs',
-  CURRENT_USER: 'logistics_current_user'
+  CURRENT_USER: 'logistics_current_user',
+  ADMIN_MODE: 'logistics_admin_mode'
 };
 
 // Инициализация данных по умолчанию
@@ -249,4 +250,29 @@ export const createAuditLog = (log: Omit<AuditLog, 'id' | 'timestamp'>): void =>
   const logs = getAuditLogs();
   logs.push(newLog);
   saveAuditLogs(logs);
+};
+
+// Admin Mode
+export const isAdminMode = (): boolean => {
+  const mode = localStorage.getItem(KEYS.ADMIN_MODE);
+  return mode === 'true';
+};
+
+export const setAdminMode = (enabled: boolean): void => {
+  if (enabled) {
+    localStorage.setItem(KEYS.ADMIN_MODE, 'true');
+  } else {
+    localStorage.removeItem(KEYS.ADMIN_MODE);
+  }
+};
+
+// Clear all data (admin function)
+export const clearAllData = (): void => {
+  Object.values(KEYS).forEach(key => {
+    if (key !== KEYS.CURRENT_USER && key !== KEYS.ADMIN_MODE) {
+      localStorage.removeItem(key);
+    }
+  });
+  // Re-initialize default data
+  initializeDefaultData();
 };

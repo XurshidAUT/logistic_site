@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, getCurrentUser, createAuditLog } from '../../store';
+import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, getCurrentUser, createAuditLog, isAdminMode } from '../../store';
 import type { Supplier } from '../../types';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -17,6 +17,7 @@ const SuppliersPage: React.FC = () => {
   });
   const { showToast } = useToast();
   const currentUser = getCurrentUser();
+  const adminMode = isAdminMode();
 
   useEffect(() => {
     loadSuppliers();
@@ -58,6 +59,10 @@ const SuppliersPage: React.FC = () => {
   };
 
   const handleEdit = (supplier: Supplier) => {
+    if (!adminMode) {
+      showToast('Включите режим администратора для редактирования', 'error');
+      return;
+    }
     setEditingSupplier(supplier);
     setFormData({
       name: supplier.name,
@@ -68,6 +73,10 @@ const SuppliersPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!adminMode) {
+      showToast('Включите режим администратора для удаления', 'error');
+      return;
+    }
     if (confirm('Удалить этого поставщика?')) {
       const supplier = suppliers.find(s => s.id === id);
       deleteSupplier(id);
@@ -132,13 +141,25 @@ const SuppliersPage: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button
                       onClick={() => handleEdit(supplier)}
-                      className="text-blue-600 hover:text-blue-900"
+                      disabled={!adminMode}
+                      className={`${
+                        adminMode 
+                          ? 'text-blue-600 hover:text-blue-900 cursor-pointer' 
+                          : 'text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={!adminMode ? 'Включите режим администратора' : ''}
                     >
                       Изменить
                     </button>
                     <button
                       onClick={() => handleDelete(supplier.id)}
-                      className="text-red-600 hover:text-red-900"
+                      disabled={!adminMode}
+                      className={`${
+                        adminMode 
+                          ? 'text-red-600 hover:text-red-900 cursor-pointer' 
+                          : 'text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={!adminMode ? 'Включите режим администратора' : ''}
                     >
                       Удалить
                     </button>

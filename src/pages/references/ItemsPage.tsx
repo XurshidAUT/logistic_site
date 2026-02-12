@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getItems, createItem, updateItem, deleteItem } from '../../store';
+import { getItems, createItem, updateItem, deleteItem, isAdminMode } from '../../store';
 import type { Item } from '../../types';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -13,11 +13,12 @@ const ItemsPage: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    unit: 'т' as 'т' | 'кг',
+    unit: 'т' as 'т' | 'кг' | 'конт.',
     category: '',
     description: '',
   });
   const { showToast } = useToast();
+  const adminMode = isAdminMode();
 
   useEffect(() => {
     loadItems();
@@ -41,6 +42,10 @@ const ItemsPage: React.FC = () => {
   };
 
   const handleEdit = (item: Item) => {
+    if (!adminMode) {
+      showToast('Включите режим администратора для редактирования', 'error');
+      return;
+    }
     setEditingItem(item);
     setFormData({
       name: item.name,
@@ -52,6 +57,10 @@ const ItemsPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!adminMode) {
+      showToast('Включите режим администратора для удаления', 'error');
+      return;
+    }
     if (confirm('Удалить эту позицию?')) {
       deleteItem(id);
       showToast('Позиция удалена', 'success');
@@ -110,13 +119,25 @@ const ItemsPage: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button
                       onClick={() => handleEdit(item)}
-                      className="text-blue-600 hover:text-blue-900"
+                      disabled={!adminMode}
+                      className={`${
+                        adminMode 
+                          ? 'text-blue-600 hover:text-blue-900 cursor-pointer' 
+                          : 'text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={!adminMode ? 'Включите режим администратора' : ''}
                     >
                       Изменить
                     </button>
                     <button
                       onClick={() => handleDelete(item.id)}
-                      className="text-red-600 hover:text-red-900"
+                      disabled={!adminMode}
+                      className={`${
+                        adminMode 
+                          ? 'text-red-600 hover:text-red-900 cursor-pointer' 
+                          : 'text-gray-400 cursor-not-allowed'
+                      }`}
+                      title={!adminMode ? 'Включите режим администратора' : ''}
                     >
                       Удалить
                     </button>
@@ -153,10 +174,11 @@ const ItemsPage: React.FC = () => {
           <Select
             label="Единица измерения"
             value={formData.unit}
-            onChange={(e) => setFormData({ ...formData, unit: e.target.value as 'т' | 'кг' })}
+            onChange={(e) => setFormData({ ...formData, unit: e.target.value as 'т' | 'кг' | 'конт.' })}
             options={[
               { value: 'т', label: 'Тонны (т)' },
               { value: 'кг', label: 'Килограммы (кг)' },
+              { value: 'конт.', label: 'Контейнеры (конт.)' },
             ]}
           />
           <Input

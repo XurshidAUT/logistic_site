@@ -12,15 +12,16 @@ interface CartItem {
   itemId: string;
   itemName: string;
   quantity: number;
-  unit: 'т' | 'кг';
+  unit: 'т' | 'кг' | 'конт.';
   quantityInTons: number;
+  containerTonnage?: number;
 }
 
 const CreateOrderPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState<'т' | 'кг'>('т');
+  const [unit, setUnit] = useState<'т' | 'кг' | 'конт.'>('т');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [containerTonnage, setContainerTonnage] = useState<number>(26);
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const CreateOrderPage: React.FC = () => {
     if (!item) return;
 
     const qty = parseFloat(quantity);
-    const qtyInTons = convertToTons(qty, unit);
+    const qtyInTons = convertToTons(qty, unit, containerTonnage);
 
     // Проверяем, есть ли эта позиция уже в корзине
     const existingIndex = cart.findIndex(c => c.itemId === selectedItemId);
@@ -64,6 +65,7 @@ const CreateOrderPage: React.FC = () => {
         quantity: qty,
         unit: unit,
         quantityInTons: qtyInTons,
+        containerTonnage: unit === 'конт.' ? containerTonnage : undefined,
       }]);
       showToast('Позиция добавлена в корзину', 'success');
     }
@@ -115,6 +117,7 @@ const CreateOrderPage: React.FC = () => {
         quantity: cartItem.quantity,
         unit: cartItem.unit,
         quantityInTons: cartItem.quantityInTons,
+        containerTonnage: cartItem.containerTonnage,
       });
     });
 
@@ -197,10 +200,11 @@ const CreateOrderPage: React.FC = () => {
           <Select
             label="Единица"
             value={unit}
-            onChange={(e) => setUnit(e.target.value as 'т' | 'кг')}
+            onChange={(e) => setUnit(e.target.value as 'т' | 'кг' | 'конт.')}
             options={[
               { value: 'т', label: 'Тонны (т)' },
               { value: 'кг', label: 'Кг' },
+              { value: 'конт.', label: 'Контейнеры (конт.)' },
             ]}
           />
         </div>
@@ -264,7 +268,7 @@ const CreateOrderPage: React.FC = () => {
                     }`}>
                       <td className="px-6 py-4 font-medium text-gray-900">{item.itemName}</td>
                       <td className="px-6 py-4 text-gray-700">
-                        {formatQuantity(item.quantity, item.unit, item.quantityInTons, containerTonnage)}
+                        {formatQuantity(item.quantity, item.unit, item.quantityInTons, item.containerTonnage || containerTonnage)}
                       </td>
                       <td className="px-6 py-4 text-gray-700 font-semibold">{formatNumber(item.quantityInTons)} т</td>
                       <td className="px-6 py-4 text-right space-x-2">
