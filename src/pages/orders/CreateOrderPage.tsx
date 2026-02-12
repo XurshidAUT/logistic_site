@@ -174,7 +174,7 @@ const CreateOrderPage: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div className="md:col-span-2">
             <Select
               label="Позиция"
@@ -207,6 +207,15 @@ const CreateOrderPage: React.FC = () => {
               { value: 'конт.', label: 'Контейнеры (конт.)' },
             ]}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">В контейнерах</label>
+            <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 font-semibold text-center">
+              {quantity && parseFloat(quantity) > 0
+                ? formatNumber(calculateContainers(convertToTons(parseFloat(quantity), unit, containerTonnage), containerTonnage))
+                : '0'} конт.
+            </div>
+          </div>
         </div>
 
         <Button onClick={handleAddToCart} className="mt-6">
@@ -256,6 +265,9 @@ const CreateOrderPage: React.FC = () => {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">
                       В тоннах
                     </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">
+                      В контейнерах
+                    </th>
                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase">
                       Действия
                     </th>
@@ -271,6 +283,7 @@ const CreateOrderPage: React.FC = () => {
                         {formatQuantity(item.quantity, item.unit, item.quantityInTons, item.containerTonnage || containerTonnage)}
                       </td>
                       <td className="px-6 py-4 text-gray-700 font-semibold">{formatNumber(item.quantityInTons)} т</td>
+                      <td className="px-6 py-4 text-blue-700 font-semibold">{formatNumber(calculateContainers(item.quantityInTons, item.containerTonnage || containerTonnage))} конт.</td>
                       <td className="px-6 py-4 text-right space-x-2">
                         <button
                           onClick={() => handleEditCartItem(index)}
