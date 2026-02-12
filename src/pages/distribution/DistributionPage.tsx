@@ -12,6 +12,7 @@ import {
   updateOrder,
   getCurrentUser,
   createAuditLog,
+  isAdminMode,
 } from '../../store';
 import type { Order, OrderLine, Allocation, Supplier } from '../../types';
 import { convertToTons, formatDate, formatCurrency, formatQuantity, formatNumber, calculateContainers } from '../../utils/helpers';
@@ -35,6 +36,7 @@ const DistributionPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const currentUser = getCurrentUser();
+  const adminMode = isAdminMode();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [orderLines, setOrderLines] = useState<OrderLine[]>([]);
@@ -103,6 +105,11 @@ const DistributionPage: React.FC = () => {
   const removeAllocationRow = (orderLineId: string, index: number) => {
     const row = allocationRows[orderLineId]?.[index];
     if (row?.id) {
+      // Check admin mode for deleting saved allocations
+      if (!adminMode) {
+        showToast('Включите режим администратора для удаления', 'error');
+        return;
+      }
       // Удалить из БД
       deleteAllocation(row.id);
       setAllocations(getAllocationsByOrderId(orderId!));
@@ -120,6 +127,12 @@ const DistributionPage: React.FC = () => {
     const row = allocationRows[orderLineId]?.[index];
     if (!row || !row.supplierId || !row.quantity || !row.pricePerTon) {
       showToast('Заполните все поля', 'error');
+      return;
+    }
+
+    // Check admin mode for updating saved allocations
+    if (row.id && !adminMode) {
+      showToast('Включите режим администратора для редактирования', 'error');
       return;
     }
 
